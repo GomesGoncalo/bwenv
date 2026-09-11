@@ -3,6 +3,8 @@
 Load environment variables from a Bitwarden folder ("profile") and exec your
 shell with them set — no plaintext `.env` files, secrets never touch disk.
 
+![Terminal Demo](bwenv.webp)
+
 ## How it works
 
 - A **profile** is a Bitwarden **folder** in your personal vault (e.g. `prod`,
