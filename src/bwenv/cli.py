@@ -14,7 +14,8 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="bwenv",
         description=(
             "Load environment variables from a Bitwarden folder (profile) and "
-            "exec your shell with them set."
+            "exec your shell with them set. Pass `-- <command>` to run a "
+            "command with those vars instead of opening a shell."
         ),
     )
     parser.add_argument(
@@ -36,9 +37,20 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _split_command(argv: list[str]) -> tuple[list[str], list[str]]:
+    """Split argv on the first literal "--" into (bwenv args, command)."""
+    if "--" in argv:
+        idx = argv.index("--")
+        return argv[:idx], argv[idx + 1 :]
+    return argv, []
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw_args = sys.argv[1:] if argv is None else argv
+    parser_args, command = _split_command(raw_args)
+
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(parser_args)
 
     if not args.profile and not args.list_profiles:
         parser.error("a profile name is required (or pass --list-profiles)")
@@ -53,10 +65,16 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         env_vars = env_loader.load_profile_env(args.profile, session)
-        shell.exec_shell_with_env(env_vars, args.shell_override)
+        if command:
+            shell.exec_command_with_env(command, env_vars)
+        else:
+            shell.exec_shell_with_env(env_vars, args.shell_override)
         return 0  # unreachable on success: execvpe replaces this process
     except BwenvError as exc:
         print(f"bwenv: {exc}", file=sys.stderr)
+        return 1
+    except FileNotFoundError as exc:
+        print(f"bwenv: command not found: {exc.filename or command[0]}", file=sys.stderr)
         return 1
 
 

@@ -18,6 +18,8 @@ shell with them set — no plaintext `.env` files, secrets never touch disk.
   replaces the current process with your `$SHELL`, with those variables set.
   Exiting the spawned shell (`exit` / Ctrl-D) returns you to wherever you ran
   `bwenv` from.
+- `bwenv <profile> -- <command...>` runs `<command>` with those variables set
+  instead of opening a shell, and exits when the command exits.
 
 ## Prerequisites
 
@@ -45,6 +47,7 @@ shell with them set — no plaintext `.env` files, secrets never touch disk.
 uv sync                        # install
 uv run bwenv prod              # unlock (if needed) and open a shell with prod's vars set
 uv run bwenv prod --shell zsh  # use a specific shell instead of $SHELL
+uv run bwenv prod -- npm run dev  # run a command with prod's vars set instead of a shell
 uv run bwenv --list-profiles   # list available Bitwarden folders
 ```
 

@@ -18,9 +18,20 @@ def resolve_shell(shell_override: str | None = None) -> str:
     return resolved
 
 
+def _merged_env(extra_env: dict[str, str]) -> dict[str, str]:
+    return {**os.environ, **extra_env}
+
+
 def exec_shell_with_env(extra_env: dict[str, str], shell_override: str | None = None) -> None:
     """Replace the current process with the resolved shell, environment merged
     from the current process env plus `extra_env` (which takes precedence)."""
     shell = resolve_shell(shell_override)
-    env = {**os.environ, **extra_env}
+    env = _merged_env(extra_env)
     os.execvpe(shell, [shell], env)
+
+
+def exec_command_with_env(command: list[str], extra_env: dict[str, str]) -> None:
+    """Replace the current process with `command`, environment merged from the
+    current process env plus `extra_env` (which takes precedence)."""
+    env = _merged_env(extra_env)
+    os.execvpe(command[0], command, env)

@@ -42,3 +42,16 @@ def test_exec_shell_with_env_merges_and_execs(mocker: MockerFixture) -> None:
     assert called_shell == "/bin/bash"
     assert argv == ["/bin/bash"]
     assert env == {"EXISTING": "1", "FOO": "bar"}
+
+
+def test_exec_command_with_env_merges_and_execs(mocker: MockerFixture) -> None:
+    mocker.patch.dict("os.environ", {"EXISTING": "1"}, clear=True)
+    execvpe = mocker.patch("os.execvpe")
+
+    shell.exec_command_with_env(["echo", "hi"], {"FOO": "bar"})
+
+    execvpe.assert_called_once()
+    called_cmd, argv, env = execvpe.call_args.args
+    assert called_cmd == "echo"
+    assert argv == ["echo", "hi"]
+    assert env == {"EXISTING": "1", "FOO": "bar"}

@@ -36,6 +36,33 @@ def test_main_loads_profile_and_execs_shell(mocker: MockerFixture) -> None:
     exec_shell.assert_called_once_with({"FOO": "bar"}, "zsh")
 
 
+def test_main_loads_profile_and_execs_command(mocker: MockerFixture) -> None:
+    mocker.patch("bwenv.bw_client.check_bw_installed")
+    mocker.patch("bwenv.bw_client.resolve_session", return_value="sess")
+    mocker.patch("bwenv.env_loader.load_profile_env", return_value={"FOO": "bar"})
+    exec_shell = mocker.patch("bwenv.shell.exec_shell_with_env")
+    exec_command = mocker.patch("bwenv.shell.exec_command_with_env")
+
+    assert cli.main(["prod", "--", "echo", "hi"]) == 0
+    exec_command.assert_called_once_with(["echo", "hi"], {"FOO": "bar"})
+    exec_shell.assert_not_called()
+
+
+def test_main_command_not_found_prints_error_and_returns_1(
+    mocker: MockerFixture, capsys: pytest.CaptureFixture[str]
+) -> None:
+    mocker.patch("bwenv.bw_client.check_bw_installed")
+    mocker.patch("bwenv.bw_client.resolve_session", return_value="sess")
+    mocker.patch("bwenv.env_loader.load_profile_env", return_value={"FOO": "bar"})
+    mocker.patch(
+        "bwenv.shell.exec_command_with_env",
+        side_effect=FileNotFoundError(2, "No such file or directory", "nope"),
+    )
+
+    assert cli.main(["prod", "--", "nope"]) == 1
+    assert "bwenv: command not found" in capsys.readouterr().err
+
+
 def test_main_prints_bwenv_error_and_returns_1(
     mocker: MockerFixture, capsys: pytest.CaptureFixture[str]
 ) -> None:
